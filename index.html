@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Antrean Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        /* Custom scrollbar for a cleaner look if needed */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800">
+
+    <!-- Navbar / Header -->
+    <header class="glass-panel border-b border-slate-200 sticky top-0 z-20 shadow-sm px-6 py-4 flex justify-between items-center transition-all">
+        <div class="flex items-center gap-3">
+            <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-md">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">Antrean Kita</h1>
+        </div>
+        <div>
+            <span id="connectionStatus" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 transition-colors">
+                <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse" id="statusDot"></span>
+                <span id="statusText">Menghubungkan...</span>
+            </span>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow flex flex-col items-center justify-center p-4 md:p-8 gap-8 w-full max-w-2xl mx-auto">
+        
+        <!-- Global Queue Display Panel -->
+        <div class="w-full bg-white rounded-[2rem] shadow-xl shadow-indigo-100/50 p-8 md:p-12 text-center border border-slate-100 flex flex-col items-center relative overflow-hidden">
+            <!-- Decorative background blob -->
+            <div class="absolute -top-10 -right-10 w-40 h-40 bg-indigo-50 rounded-full blur-3xl -z-10"></div>
+            <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-50 rounded-full blur-3xl -z-10"></div>
+
+            <h2 class="text-slate-500 font-bold uppercase tracking-[0.2em] text-xs md:text-sm mb-2">Nomor Panggilan Saat Ini</h2>
+            
+            <div class="relative py-6">
+                <div id="currentNumberDisplay" class="text-9xl md:text-[10rem] font-black text-indigo-600 leading-none tracking-tighter transition-all duration-300 transform scale-100">
+                    -
+                </div>
+            </div>
+
+            <div class="mt-4 px-4 py-2 bg-slate-50 rounded-full border border-slate-100 text-slate-500 text-sm font-medium">
+                Total Antrean Terdaftar: <span id="totalQueueDisplay" class="text-slate-800 font-bold">0</span>
+            </div>
+        </div>
+
+        <!-- User Dynamic Interaction Section -->
+        <div id="userSection" class="w-full min-h-[160px] flex flex-col justify-center transition-all duration-300">
+            <!-- Loading state as placeholder -->
+            <div class="animate-pulse flex flex-col gap-4 items-center w-full">
+                <div class="h-16 bg-slate-200 w-full rounded-2xl"></div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer & Admin Panel -->
+    <footer class="mt-auto border-t border-slate-200 bg-white p-6 pb-8 text-center flex flex-col items-center">
+        <button id="toggleAdminBtn" class="text-slate-400 hover:text-indigo-600 text-sm font-medium underline decoration-slate-300 hover:decoration-indigo-400 underline-offset-4 transition-all mb-4">
+            Pengaturan Petugas Loket
+        </button>
+
+        <div id="adminPanel" class="hidden w-full max-w-lg bg-slate-50 border border-slate-200 rounded-2xl p-5 text-left shadow-inner transition-all">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-slate-700">Panel Kontrol Petugas</h3>
+                <span class="text-[10px] uppercase font-bold tracking-wider bg-slate-200 text-slate-500 px-2 py-1 rounded">Admin</span>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                <button id="btnCallNext" class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-semibold transition-all shadow-md shadow-indigo-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+                    Panggil Berikutnya
+                </button>
+                <button id="btnResetQueue" class="bg-white border-2 border-red-100 hover:border-red-200 hover:bg-red-50 text-red-600 py-3 px-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    Reset Antrean
+                </button>
+            </div>
+
+            <div class="flex items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div>
+                    <div class="font-semibold text-slate-700 text-sm">Suara Panggilan Otomatis</div>
+                    <div class="text-xs text-slate-500">Bacakan nomor saat dipanggil</div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="audioToggle" class="sr-only peer">
+                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                </label>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+    <!-- Custom Confirmation Modal (To avoid browser default alert/confirm) -->
+    <div id="confirmModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center z-50 transition-opacity opacity-0">
+        <div class="bg-white rounded-2xl p-6 w-11/12 max-w-sm shadow-2xl transform scale-95 transition-transform" id="confirmBox">
+            <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-4">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2" id="confirmTitle">Konfirmasi</h3>
+            <p class="text-slate-600 mb-6 text-sm" id="confirmMessage">Apakah Anda yakin ingin melanjutkan?</p>
+            <div class="flex justify-end gap-3">
+                <button id="btnConfirmCancel" class="px-5 py-2.5 rounded-xl font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors">Batal</button>
+                <button id="btnConfirmOk" class="px-5 py-2.5 rounded-xl font-medium bg-red-600 hover:bg-red-700 text-white shadow-md transition-colors">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Environment Variables Injection
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'demo-queue-app';
+        let firebaseConfig = {};
+        try {
+            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        } catch (e) {
+            console.warn("Failed to parse Firebase Config. App might not function correctly if variables are absent.");
+        }
+
+        // Firebase Initialization
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Application State
+        let currentUser = null;
+        let globalQueueState = { current_number: 0, latest_number: 0 };
+        let myTicketNumber = null;
+        let soundEnabled = false;
+        let previousCalledNumber = 0;
+
+        // Initialize Application
+        async function initApp() {
+            try {
+                // Auth Rule compliance: sign in FIRST
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                currentUser = auth.currentUser;
+                
+                updateConnectionStatus("Online", true);
+                
+                // Once authenticated, start database listeners
+                startListeners();
+            } catch (error) {
+                console.error("Auth error:", error);
+                updateConnectionStatus("Gagal Terhubung", false);
+                showToast("Sistem gagal terhubung ke server autentikasi.", "error");
+            }
+        }
+
+        function startListeners() {
+            if (!currentUser) return;
+
+            // 1. Listen to Global Public Queue State
+            const globalQueueRef = doc(db, 'artifacts', appId, 'public', 'data', 'queue', 'state');
+            onSnapshot(globalQueueRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    globalQueueState = docSnap.data();
+                } else {
+                    // Initialize empty queue state if it doesn't exist yet
+                    setDoc(globalQueueRef, { current_number: 0, latest_number: 0 }).catch(console.error);
+                    globalQueueState = { current_number: 0, latest_number: 0 };
+                }
+
+                // Announce newly called number if changed and enabled
+                if (soundEnabled && globalQueueState.current_number > previousCalledNumber) {
+                    announceNumber(globalQueueState.current_number);
+                }
+                previousCalledNumber = globalQueueState.current_number;
+
+                updateUIGlobals();
+                updateUIUserSection();
+            }, (error) => {
+                console.error("Snapshot error (Global):", error);
+                showToast("Koneksi antrean terputus.", "error");
+            });
+
+            // 2. Listen to User's Private Ticket State
+            const myTicketRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'queue', 'my_ticket');
+            onSnapshot(myTicketRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    myTicketNumber = docSnap.data().number;
+                } else {
+                    myTicketNumber = null;
+                }
+                updateUIUserSection();
+            }, (error) => {
+                console.error("Snapshot error (Private):", error);
+            });
+        }
+
+        // Main User Action: Take a Ticket
+        async function takeNewTicket() {
+            if (!currentUser) {
+                showToast("Anda harus terhubung ke sistem terlebih dahulu.", "error");
+                return;
+            }
+
+            const globalQueueRef = doc(db, 'artifacts', appId, 'public', 'data', 'queue', 'state');
+            const myTicketRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'queue', 'my_ticket');
+            let assignedNumber = null;
+
+            try {
+                // Transaction ensures no two users get the exact same ticket number concurrently
+                await runTransaction(db, async (transaction) => {
+                    const queueDoc = await transaction.get(globalQueueRef);
+                    if (!queueDoc.exists()) {
+                        assignedNumber = 1;
+                        transaction.set(globalQueueRef, { current_number: 0, latest_number: 1 });
+                    } else {
+                        assignedNumber = queueDoc.data().latest_number + 1;
+                        transaction.update(globalQueueRef, { latest_number: assignedNumber });
+                    }
+                });
+
+                if (assignedNumber) {
+                    await setDoc(myTicketRef, { number: assignedNumber });
+                    showToast(`Berhasil mengambil nomor antrean: ${assignedNumber}`, "success");
+                }
+            } catch (error) {
+                console.error("Take ticket error:", error);
+                showToast("Terjadi kesalahan saat mengambil nomor. Coba lagi.", "error");
+            }
+        }
+
+        // User Action: Cancel Ticket
+        function requestCancelTicket() {
+            showConfirmDialog(
+                "Batalkan Antrean",
+                "Apakah Anda yakin ingin mengembalikan/membatalkan nomor antrean Anda?",
+                async () => {
+                    if (!currentUser) return;
+                    try {
+                        const myTicketRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'queue', 'my_ticket');
+                        await deleteDoc(myTicketRef);
+                        showToast("Antrean berhasil dibatalkan.", "success");
+                    } catch (error) {
+                        showToast("Gagal membatalkan antrean.", "error");
+                    }
+                }
+            );
+        }
+
+        // Admin Action: Call Next Number
+        async function adminCallNext() {
+            if (!currentUser) return;
+            const globalQueueRef = doc(db, 'artifacts', appId, 'public', 'data', 'queue', 'state');
+            
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const queueDoc = await transaction.get(globalQueueRef);
+                    if (queueDoc.exists()) {
+                        const current = queueDoc.data().current_number;
+                        const latest = queueDoc.data().latest_number;
+                        if (current < latest) {
+                            transaction.update(globalQueueRef, { current_number: current + 1 });
+                        } else {
+                            throw new Error("AntreanHabis");
+                        }
+                    }
+                });
+            } catch (error) {
+                if (error.message === "AntreanHabis") {
+                    showToast("Semua antrean yang terdaftar sudah dipanggil.", "success");
+                } else {
+                    showToast("Gagal memanggil antrean berikutnya.", "error");
+                }
+            }
+        }
+
+        // Admin Action: Reset Queue completely
+        function adminResetQueue() {
+            showConfirmDialog(
+                "Peringatan Reset Sistem",
+                "Tindakan ini akan menghapus antrean saat ini dan mereset hitungan kembali ke Nol. Lanjutkan?",
+                async () => {
+                    if (!currentUser) return;
+                    try {
+                        const globalQueueRef = doc(db, 'artifacts', appId, 'public', 'data', 'queue', 'state');
+                        await setDoc(globalQueueRef, { current_number: 0, latest_number: 0 });
+                        showToast("Sistem antrean berhasil direset.", "success");
+                    } catch (error) {
+                        showToast("Gagal mereset sistem.", "error");
+                    }
+                }
+            );
+        }
+
+        // Text-to-Speech implementation
+        function announceNumber(num) {
+            if (!('speechSynthesis' in window)) return;
+            
+            // Cancel any current utterance
+            window.speechSynthesis.cancel();
+            
+            const msg = new SpeechSynthesisUtterance();
+            msg.text = `Nomor antrean, ${num}, silakan menuju ke loket.`;
+            msg.lang = 'id-ID';
+            msg.rate = 0.85; // Slightly slower
+            msg.pitch = 1;
+            
+            window.speechSynthesis.speak(msg);
+        }
+
+        // UI Renderers
+        function updateConnectionStatus(text, isOnline) {
+            document.getElementById('statusText').textContent = text;
+            const statusBadge = document.getElementById('connectionStatus');
+            const statusDot = document.getElementById('statusDot');
+            
+            if (isOnline) {
+                statusBadge.className = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 transition-colors";
+                statusDot.className = "w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]";
+            } else {
+                statusBadge.className = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 transition-colors";
+                statusDot.className = "w-2 h-2 rounded-full bg-red-500 animate-pulse";
+            }
+        }
+
+        function updateUIGlobals() {
+            const displayEl = document.getElementById('currentNumberDisplay');
+            const totalEl = document.getElementById('totalQueueDisplay');
+            
+            // Number update animation effect
+            if (displayEl.textContent != globalQueueState.current_number && globalQueueState.current_number !== 0) {
+                displayEl.classList.add('scale-110', 'text-indigo-400');
+                setTimeout(() => {
+                    displayEl.classList.remove('scale-110', 'text-indigo-400');
+                }, 300);
+            }
+
+            displayEl.textContent = globalQueueState.current_number === 0 ? "-" : globalQueueState.current_number;
+            totalEl.textContent = globalQueueState.latest_number;
+        }
+
+        function updateUIUserSection() {
+            const container = document.getElementById('userSection');
+            
+            // If user doesn't have a ticket yet
+            if (!myTicketNumber) {
+                container.innerHTML = `
+                    <button id="btnTakeTicketUI" class="w-full relative group overflow-hidden bg-indigo-600 text-white text-lg md:text-xl font-bold py-6 px-4 rounded-3xl shadow-xl shadow-indigo-600/30 transition-all hover:-translate-y-1 active:translate-y-0 active:shadow-md flex flex-col items-center justify-center gap-2">
+                        <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+                        <svg class="w-8 h-8 z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
+                        <span class="z-10">Ambil Nomor Antrean</span>
+                    </button>
+                `;
+                document.getElementById('btnTakeTicketUI').addEventListener('click', takeNewTicket);
+                return;
+            }
+
+            // User has a ticket, calculate status
+            let statusBadge = "";
+            let containerBgClass = "bg-slate-50 border-slate-200";
+            let numberColorClass = "text-slate-800";
+            
+            if (myTicketNumber < globalQueueState.current_number) {
+                // Missed
+                containerBgClass = "bg-rose-50 border-rose-200";
+                numberColorClass = "text-rose-900 opacity-50";
+                statusBadge = `
+                    <div class="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-rose-100 shadow-sm">
+                        <div class="w-2 h-2 rounded-full bg-rose-500"></div>
+                        <span class="text-rose-600 font-semibold text-sm">Nomor Anda Terlewat</span>
+                    </div>
+                `;
+            } else if (myTicketNumber === globalQueueState.current_number) {
+                // Now Serving
+                containerBgClass = "bg-emerald-50 border-emerald-300 shadow-[0_0_30px_rgba(16,185,129,0.2)]";
+                numberColorClass = "text-emerald-600";
+                statusBadge = `
+                    <div class="inline-flex items-center gap-2 bg-white px-5 py-2.5 rounded-full border border-emerald-200 shadow-md transform animate-bounce mt-2">
+                        <span class="text-emerald-600 font-bold">🎉 Giliran Anda Sekarang!</span>
+                    </div>
+                `;
+            } else {
+                // Waiting
+                const waitCount = myTicketNumber - globalQueueState.current_number;
+                containerBgClass = "bg-sky-50 border-sky-200";
+                numberColorClass = "text-sky-900";
+                statusBadge = `
+                    <div class="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-sky-100 shadow-sm">
+                        <div class="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></div>
+                        <span class="text-sky-700 font-medium text-sm">Menunggu <b>${waitCount}</b> orang lagi</span>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = `
+                <div class="w-full border-2 rounded-3xl p-8 text-center transition-all duration-500 ${containerBgClass}">
+                    <h3 class="text-slate-500 text-sm font-semibold uppercase tracking-widest mb-4">Nomor Anda</h3>
+                    <div class="text-7xl font-black mb-6 ${numberColorClass}">${myTicketNumber}</div>
+                    <div class="mb-6 h-12 flex justify-center items-center">${statusBadge}</div>
+                    <button id="btnCancelTicketUI" class="text-sm font-medium text-slate-400 hover:text-rose-500 transition-colors underline decoration-dotted underline-offset-4">Batal / Ambil Ulang</button>
+                </div>
+            `;
+            document.getElementById('btnCancelTicketUI').addEventListener('click', requestCancelTicket);
+        }
+
+        // UI Helpers (Toast & Modal)
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            const isError = type === 'error';
+            toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg transform transition-all duration-300 translate-y-10 opacity-0 pointer-events-auto ${isError ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}`;
+            
+            toast.innerHTML = `
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    ${isError 
+                        ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>' 
+                        : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>'}
+                </svg>
+                <p class="text-sm font-medium">${message}</p>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Animate in
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-10', 'opacity-0');
+            });
+            
+            // Auto remove
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-x-10');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        let confirmCallback = null;
+        function showConfirmDialog(title, message, callback) {
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMessage').textContent = message;
+            confirmCallback = callback;
+            
+            const modal = document.getElementById('confirmModal');
+            const box = document.getElementById('confirmBox');
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Animate in
+            requestAnimationFrame(() => {
+                modal.classList.remove('opacity-0');
+                box.classList.remove('scale-95');
+            });
+        }
+
+        function hideConfirmDialog() {
+            const modal = document.getElementById('confirmModal');
+            const box = document.getElementById('confirmBox');
+            
+            modal.classList.add('opacity-0');
+            box.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                confirmCallback = null;
+            }, 200);
+        }
+
+        // Static Event Listeners setup
+        document.getElementById('toggleAdminBtn').addEventListener('click', (e) => {
+            const panel = document.getElementById('adminPanel');
+            const isHidden = panel.classList.contains('hidden');
+            if (isHidden) {
+                panel.classList.remove('hidden');
+                e.target.textContent = "Tutup Pengaturan Petugas";
+            } else {
+                panel.classList.add('hidden');
+                e.target.textContent = "Pengaturan Petugas Loket";
+            }
+        });
+
+        document.getElementById('audioToggle').addEventListener('change', (e) => {
+            soundEnabled = e.target.checked;
+            if (soundEnabled) {
+                // Browsers require user interaction to unlock audio synthesis context
+                if ('speechSynthesis' in window) {
+                    const unlockObj = new SpeechSynthesisUtterance('');
+                    window.speechSynthesis.speak(unlockObj);
+                }
+                showToast("Pengumuman suara otomatis diaktifkan.", "success");
+            } else {
+                showToast("Pengumuman suara dinonaktifkan.", "success");
+            }
+        });
+
+        document.getElementById('btnConfirmCancel').addEventListener('click', hideConfirmDialog);
+        document.getElementById('btnConfirmOk').addEventListener('click', () => {
+            if (typeof confirmCallback === 'function') {
+                confirmCallback();
+            }
+            hideConfirmDialog();
+        });
+
+        document.getElementById('btnCallNext').addEventListener('click', adminCallNext);
+        document.getElementById('btnResetQueue').addEventListener('click', adminResetQueue);
+
+        // Start App
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
